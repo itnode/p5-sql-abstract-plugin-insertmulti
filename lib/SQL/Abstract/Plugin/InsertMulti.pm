@@ -127,14 +127,14 @@ sub _insert_multi_values {
                 {
                     ARRAYREFREF => sub {    # literal SQL with bind
                         my ( $sql, @bind ) = @${$v};
-                        push @set,      "$label = $sql";
+                        push @set,      "$label = excluded.$label";
                         push @all_bind, @bind;
                     },
                     SCALARREF => sub {      # literal SQL without bind
                         push @set, "$label = $$v";
                     },
                     SCALAR_or_UNDEF => sub {
-                        push @set, "$label = ?";
+                        push @set, "$label = excluded.$label";
                         push @all_bind, $self->_bindtype( $k, $v );
                     },
                 }
@@ -142,7 +142,7 @@ sub _insert_multi_values {
         }
 
         $sql .=
-          $self->_sqlcase(' on duplicate key update ') . join( ', ', @set );
+          $self->_sqlcase(' ON CONFLICT (id) DO UPDATE   SET ') . join( ', ', @set );
     }
 
     return ( $sql, @all_bind );
